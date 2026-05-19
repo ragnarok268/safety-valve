@@ -1,6 +1,7 @@
 # Safety Valve: Token-Zero Execution Firewall for AI Systems
 
-By the time unsafe execution reaches probabilistic inference, deterministic governance has already failed.
+Safety Valve is a deterministic pre-token gate.
+It enforces execution boundaries before probabilistic inference begins - because by the time unsafe input reaches an LLM, deterministic governance has already failed.
 
 Safety Valve is a tiny CPU-only reference artifact for token-zero execution governance. It evaluates a prompt before any live model inference and produces a deterministic governance receipt: `ALLOW`, `BLOCK`, or `SANDBOX`.
 
@@ -24,9 +25,25 @@ Safety Valve stays deliberately small:
 - No network calls
 - No production-side effects
 
-## Why Post-Hoc Moderation Fails
+## The Governance Gap
 
 Post-hoc moderation happens after unsafe execution has already crossed the most important boundary: inference eligibility. In operational systems, that is too late. Tokens, routing decisions, and tool plans may already be in motion. Safety Valve demonstrates the opposite posture: deterministic governance first, probabilistic generation later, and only when permitted.
+
+## Failure-Mode Contrast
+
+Post-hoc moderation:
+
+`prompt -> LLM/tool planner -> execution -> state change -> moderation block`
+
+Token-zero governance:
+
+`prompt -> Safety Valve -> ALLOW / BLOCK / SANDBOX`
+
+`BLOCK` / `SANDBOX` -> no inference, no execution, no side effects
+
+## Why This Architecture Matters
+
+The key architectural distinction is timing. A system that waits until after model inference or tool planning to make a safety decision has already crossed the operational boundary that matters most. Safety Valve moves that boundary forward to token zero, where routing is still deterministic, auditable, and cheap to replay.
 
 ## ALLOW / BLOCK / SANDBOX
 
@@ -53,9 +70,26 @@ Every decision returns a governance receipt with:
 - `review_required`
 - `policy_version`
 
+## Core Invariants
+
+- Deterministic routing
+- No probabilistic recursion
+- No secondary LLM judge
+- CPU-only
+- Local-first
+- Replayable receipt shape
+- Fail-closed `SANDBOX` lane
+- No production side effects before governance
+
 ## Failure Lane: Sandboxed Review
 
 `SANDBOX` is the fail-closed lane for prompts that suggest privileged execution risk without enough proof to permit live inference. In this public skeleton, that includes deterministic matches on prompts involving credentials, secrets, admin access, tool use, customer data, production access, or unclear authorization. Sandboxing is not execution. It does not invoke a model, route tools, or mutate state.
+
+## Public Rules, Private Depth
+
+The public skeleton intentionally uses toy, public-safe deterministic rules. The examples are simple string matches for harmless prompts, obvious jailbreak language, and ambiguous privileged requests involving credentials, secrets, admin access, tool use, customer data, production access, or unclear authorization.
+
+That is enough to demonstrate the control flow without exposing hidden or private rule logic. The goal of this repo is to show the governance shape, receipt shape, and fail-closed routing model, not to publish a full production rule set.
 
 ## Guarantees
 
